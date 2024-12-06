@@ -1,4 +1,8 @@
 {
+  "compilerOptions": {
+    "esModuleInterop": true, // Add this to ensure module interoperability
+    "jsx": "react-jsx",  // Add this line to ensure JSX is supported
+  },
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },
