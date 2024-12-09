@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Container, Row, Col, Card, Form, Alert } from 'react-bootstrap';
+import { useEffect, useState } from "react";
+import { Container, Row, Col, Card, Form, Alert } from "react-bootstrap";
 
 interface Trip {
   heroImage: string;
@@ -16,16 +16,17 @@ const Trips: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortOrder, setSortOrder] = useState<'ascending' | 'descending'>('ascending');
+  const [sortOrder, setSortOrder] = useState<"ascending" | "descending">(
+    "ascending"
+  );
   const [unitStyles, setUnitStyles] = useState<string[]>([]);
-  const [selectedStyle, setSelectedStyle] = useState<string>('All');
-  
+  const [selectedStyle, setSelectedStyle] = useState<string>("All");
 
   useEffect(() => {
-    fetch('/trips.json') // Json file located in the public folder
+    fetch("/trips.json") // Json file located in the public folder
       .then((response) => {
         if (!response.ok) {
-          throw new Error('Network response was not ok');
+          throw new Error("Network response was not ok");
         }
         return response.json() as Promise<TripResponse>;
       })
@@ -37,17 +38,23 @@ const Trips: React.FC = () => {
           checkInDate: trip.checkInDate,
         }));
 
-        const styles = Array.from(new Set(simplifiedData.map(trip => trip.unitStyleName)));
-        setUnitStyles(['All', ...styles]);
+        const styles = Array.from(
+          new Set(simplifiedData.map((trip) => trip.unitStyleName))
+        );
+        setUnitStyles(["All", ...styles]);
 
-        simplifiedData.sort((a: Trip, b: Trip) => new Date(a.checkInDate).getTime() - new Date(b.checkInDate).getTime());
+        simplifiedData.sort(
+          (a: Trip, b: Trip) =>
+            new Date(a.checkInDate).getTime() -
+            new Date(b.checkInDate).getTime()
+        );
 
         setTrips(simplifiedData);
         setLoading(false);
       })
       .catch((error) => {
-        console.error('Error fetching data:', error);
-        setError('Failed to load data. Please try again later.');
+        console.error("Error fetching data:", error);
+        setError("Failed to load data. Please try again later.");
         setLoading(false);
       });
   }, []);
@@ -56,14 +63,15 @@ const Trips: React.FC = () => {
     const sortedTrips = [...trips].sort((a, b) => {
       const dateA = new Date(a.checkInDate).getTime();
       const dateB = new Date(b.checkInDate).getTime();
-      return sortOrder === 'ascending' ? dateA - dateB : dateB - dateA;
+      return sortOrder === "ascending" ? dateA - dateB : dateB - dateA;
     });
     setTrips(sortedTrips);
   }, [sortOrder]);
 
-  const filteredTrips = selectedStyle === 'All'
-    ? trips
-    : trips.filter(trip => trip.unitStyleName === selectedStyle);
+  const filteredTrips =
+    selectedStyle === "All"
+      ? trips
+      : trips.filter((trip) => trip.unitStyleName === selectedStyle);
 
   if (loading) {
     return (
@@ -84,9 +92,9 @@ const Trips: React.FC = () => {
   return (
     <Container>
       <h1 className="mb-4">UI Engineering Code Challenge</h1>
-      <h4 className='mb-4'>Using React, Typescript & Vite</h4>
+      <h4 className="mb-4">Using React, Typescript & Vite</h4>
       <Row className="text-start">
-      <Col md={6} sm={12}>
+        <Col md={6} sm={12}>
           <Form.Group controlId="sortOrder" className="mb-3">
             <Form.Label>Sort by Check-In Date</Form.Label>
             <Form.Control
@@ -121,18 +129,19 @@ const Trips: React.FC = () => {
       <Row>
         {filteredTrips.map((trip, index) => (
           <Col key={index} md={4} className="mb-4">
-            <Card>
+            <Card className="h-100">
               <Card.Img
                 variant="top"
                 src={`https://cms.inspirato.com/ImageGen.ashx?image=${trip.heroImage}&width=300&height=200`}
                 alt={trip.unitName}
               />
-              <Card.Body>
-                <Card.Title>{trip.unitName}</Card.Title>
+              <Card.Body className="d-flex flex-column">
+                <Card.Title className="flex-grow-1">{trip.unitName}</Card.Title>
                 <Card.Text>
                   <strong>Style:</strong> {trip.unitStyleName}
                   <br />
-                  <strong>Check-In Date:</strong> {new Date(trip.checkInDate).toLocaleDateString()}
+                  <strong>Check-In Date:</strong>{" "}
+                  {new Date(trip.checkInDate).toLocaleDateString()}
                 </Card.Text>
               </Card.Body>
             </Card>
