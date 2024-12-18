@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
-import { Container, Row, Col, Card, Form, Alert } from "react-bootstrap";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Form,
+  Alert,
+  Pagination,
+} from "react-bootstrap"; // Import components from React-Bootstrap
 
+// Define an interface for a Trip object
 interface Trip {
   heroImage: string;
   unitName: string;
@@ -8,22 +17,36 @@ interface Trip {
   checkInDate: string;
 }
 
+// Define an interface for the response from the API
 interface TripResponse {
   tripSet: Trip[];
 }
 
 const Trips: React.FC = () => {
+  // State to hold the trips data
   const [trips, setTrips] = useState<Trip[]>([]);
+  // State to indicate if data is being loaded
   const [loading, setLoading] = useState<boolean>(true);
+  // State to hold any error message
   const [error, setError] = useState<string | null>(null);
+  // State to hold the sort order for the trips
   const [sortOrder, setSortOrder] = useState<"ascending" | "descending">(
     "ascending"
   );
+  // State to hold the list of unit styles available
   const [unitStyles, setUnitStyles] = useState<string[]>([]);
+  // State to hold the currently selected unit style for filtering
   const [selectedStyle, setSelectedStyle] = useState<string>("All");
+  // State to hold the hold the search query
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const tripsPerPage = 6;
+
+  // Effect to fetch the trips data from a local JSON file
   useEffect(() => {
-    fetch("/trips.json") // Json file located in the public folder
+    fetch("/trips.json") // JSON file located in the public folder
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -31,6 +54,7 @@ const Trips: React.FC = () => {
         return response.json() as Promise<TripResponse>;
       })
       .then((data) => {
+        // Simplify the trips data
         const simplifiedData: Trip[] = data.tripSet.map((trip) => ({
           heroImage: trip.heroImage,
           unitName: trip.unitName,
@@ -38,17 +62,20 @@ const Trips: React.FC = () => {
           checkInDate: trip.checkInDate,
         }));
 
+        // Extract unique unit styles and set the state
         const styles = Array.from(
           new Set(simplifiedData.map((trip) => trip.unitStyleName))
         );
         setUnitStyles(["All", ...styles]);
 
+        // Sort the trips by check-in date
         simplifiedData.sort(
           (a: Trip, b: Trip) =>
             new Date(a.checkInDate).getTime() -
             new Date(b.checkInDate).getTime()
         );
 
+        // Update the trips state and set loading to false
         setTrips(simplifiedData);
         setLoading(false);
       })
@@ -59,6 +86,7 @@ const Trips: React.FC = () => {
       });
   }, []);
 
+  // Effect to re-sort the trips whenever the sort order changes
   useEffect(() => {
     const sortedTrips = [...trips].sort((a, b) => {
       const dateA = new Date(a.checkInDate).getTime();
@@ -68,11 +96,27 @@ const Trips: React.FC = () => {
     setTrips(sortedTrips);
   }, [sortOrder]);
 
-  const filteredTrips =
-    selectedStyle === "All"
-      ? trips
-      : trips.filter((trip) => trip.unitStyleName === selectedStyle);
+  // Filter the trips based on the selected unit style and search query
+  const filteredTrips = trips.filter((trip) => {
+    const matchesStyle =
+      selectedStyle === "All" || trip.unitStyleName === selectedStyle;
+    const matchesSearch = trip.unitName
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    return matchesStyle && matchesSearch;
+  });
 
+  // Paginate the filtered trips
+  const indexOfLastTrip = currentPage * tripsPerPage;
+  const indexOfFirstTrip = indexOfLastTrip - tripsPerPage;
+  const currentTrips = filteredTrips.slice(indexOfFirstTrip, indexOfLastTrip);
+
+  const totalPages = Math.ceil(filteredTrips.length / tripsPerPage);
+
+  // Handle page change
+  const handlePageChange = (pageNumber: number) => setCurrentPage(pageNumber);
+
+  // Display a loading message if data is still loading
   if (loading) {
     return (
       <Container>
@@ -81,6 +125,7 @@ const Trips: React.FC = () => {
     );
   }
 
+  // Display an error message if there was an error fetching the data
   if (error) {
     return (
       <Container>
@@ -89,12 +134,24 @@ const Trips: React.FC = () => {
     );
   }
 
+  // Render the trips and control elements
   return (
-    <Container>
+    <Container style={{ minWidth: "1140px" }}>
       <h1 className="mb-4">UI Engineering Code Challenge</h1>
       <h4 className="mb-4">Using React, Typescript & Vite</h4>
       <Row className="text-start">
-        <Col md={6} sm={12}>
+        <Col md={4} sm={12}>
+          <Form.Group controlId="searchQuery" className="mb-3">
+            <Form.Label>Search by Unit Name</Form.Label>
+            <Form.Control
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search unit name..."
+            />
+          </Form.Group>
+        </Col>
+        <Col md={4} sm={12}>
           <Form.Group controlId="sortOrder" className="mb-3">
             <Form.Label>Sort by Check-In Date</Form.Label>
             <Form.Control
@@ -109,7 +166,7 @@ const Trips: React.FC = () => {
             </Form.Control>
           </Form.Group>
         </Col>
-        <Col sm={12} md={6}>
+        <Col sm={12} md={4}>
           <Form.Group controlId="unitStyle" className="mb-3">
             <Form.Label>Filter by Unit Style</Form.Label>
             <Form.Control
@@ -127,7 +184,7 @@ const Trips: React.FC = () => {
         </Col>
       </Row>
       <Row>
-        {filteredTrips.map((trip, index) => (
+        {currentTrips.map((trip, index) => (
           <Col key={index} md={4} className="mb-4">
             <Card className="h-100">
               <Card.Img
@@ -147,6 +204,37 @@ const Trips: React.FC = () => {
             </Card>
           </Col>
         ))}
+      </Row>
+      <Row>
+        <Col>
+          <Pagination className="d-flex justify-content-center mt-4">
+            <Pagination.First
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1}
+            />
+            <Pagination.Prev
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            />
+            {Array.from({ length: totalPages }, (_, index) => (
+              <Pagination.Item
+                key={index + 1}
+                active={index + 1 === currentPage}
+                onClick={() => handlePageChange(index + 1)}
+              >
+                {index + 1}
+              </Pagination.Item>
+            ))}
+            <Pagination.Next
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            />
+            <Pagination.Last
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage === totalPages}
+            />
+          </Pagination>
+        </Col>
       </Row>
     </Container>
   );
