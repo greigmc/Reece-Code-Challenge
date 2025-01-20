@@ -42,7 +42,7 @@ const Trips: React.FC = () => {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const tripsPerPage = 6;
+  const tripsPerPage = 9;
 
   // Effect to fetch the trips data from a local JSON file
   useEffect(() => {
